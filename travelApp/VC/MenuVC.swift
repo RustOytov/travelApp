@@ -2,6 +2,14 @@ import Foundation
 import UIKit
 class MenuVC: UIViewController {
     
+    let bgImage: UIImageView = {
+        let image = UIImageView()
+        image.image = .menuBg
+        image.frame = UIScreen.main.bounds
+        image.contentMode = .scaleAspectFill
+        return image
+    }()
+    
     let nameUserText: UILabel = {
         let label = UILabel()
         label.numberOfLines = 0
@@ -155,6 +163,7 @@ class MenuVC: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .bgMenu
+        self.view.insertSubview(bgImage, at: 0)
         setSubviews()
         makeConstraints()
     }

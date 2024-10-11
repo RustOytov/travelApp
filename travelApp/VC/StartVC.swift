@@ -1,7 +1,13 @@
 import UIKit
 
 class StartVC: UIViewController {
-    
+    let bgImage: UIImageView = {
+        let image = UIImageView()
+        image.image = .startBg
+        image.frame = UIScreen.main.bounds
+        image.contentMode = .scaleAspectFill
+        return image
+    }()
     let headerText: UILabel = {
         let label = UILabel()
         label.numberOfLines = 0
@@ -77,7 +83,8 @@ class StartVC: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .bg
+//        view.backgroundColor = .bg
+        self.view.insertSubview(bgImage, at: 0)
         setSubviews()
         makeContstraints()
     }
