@@ -56,18 +56,6 @@ class PlacesVC: UIViewController, UICollectionViewDelegateFlowLayout{
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
-    //while not work
-    let searchContainer: UITextField = {
-        let cont = UITextField()
-        cont.backgroundColor = .white
-        cont.placeholder = "Search"
-        cont.layer.cornerRadius = 25
-        cont.contentMode = .scaleAspectFill
-        cont.translatesAutoresizingMaskIntoConstraints = false
-        cont.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 15, height: 0))
-        cont.leftViewMode = .always
-        return cont
-    }()
     let labelCollection: UILabel = {
         let label = UILabel()
         label.text = "Mountains"
@@ -77,13 +65,16 @@ class PlacesVC: UIViewController, UICollectionViewDelegateFlowLayout{
         return label
     }()
     
-    var mount: [Mountain] = []
     var collectionView: UICollectionView!
+    let search = UISearchBar()
+    var mount: [Mountain] = []
+    var filteredItems: [Mountain] = []
     //MARK: - viewDidLoad
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .adventure
         setSubviews()
+        setupSearchBar()
         makeConstraints()
 
         let backButton = UIBarButtonItem()
@@ -108,19 +99,21 @@ class PlacesVC: UIViewController, UICollectionViewDelegateFlowLayout{
         api.fetchMountains {
             DispatchQueue.main.async {
                 self.mount = api.mountainsRes
+                self.filteredItems = self.mount
                 self.collectionView.reloadData()
             }
         }
         view.addSubview(collectionView)
+        view.bringSubviewToFront(search)
     }
-    
+    //MARK: setSubviews and Constraints
     func setSubviews() {
         view.addSubview(userIconCircle)
         view.addSubview(userIconMan)
         view.addSubview(userName)
         view.addSubview(burgerMenu)
         view.addSubview(secondTitle)
-        view.addSubview(searchContainer)
+        view.addSubview(search)
         view.addSubview(labelCollection)
     }
     func makeConstraints() {
@@ -148,17 +141,27 @@ class PlacesVC: UIViewController, UICollectionViewDelegateFlowLayout{
             secondTitle.leadingAnchor.constraint(equalTo: userIconCircle.leadingAnchor)
         ])
         NSLayoutConstraint.activate([
-            searchContainer.topAnchor.constraint(equalTo: secondTitle.bottomAnchor, constant: 10),
-            searchContainer.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            searchContainer.heightAnchor.constraint(equalToConstant: 50),
-            searchContainer.widthAnchor.constraint(equalToConstant: 335),
+            search.topAnchor.constraint(equalTo: secondTitle.bottomAnchor, constant: 15),
+            search.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            search.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
         ])
         NSLayoutConstraint.activate([
-            labelCollection.topAnchor.constraint(equalTo: searchContainer.bottomAnchor, constant: 21),
+            labelCollection.topAnchor.constraint(equalTo: search.bottomAnchor, constant: 21),
             labelCollection.leadingAnchor.constraint(equalTo: secondTitle.leadingAnchor)
         ])
-        
     }
+    //MARK: - setupSearchBar
+    func setupSearchBar() {
+        search.delegate = self
+        search.placeholder = "Search"
+        search.searchBarStyle = .minimal
+        search.backgroundColor = .white
+        search.layer.cornerRadius = 20
+        search.searchTextField.textColor = .black
+        search.searchTextField.backgroundColor = .white
+        search.translatesAutoresizingMaskIntoConstraints = false
+    }
+
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
             let visibleCells = collectionView.visibleCells
             let disappearThreshold: CGFloat = 300
@@ -167,7 +170,7 @@ class PlacesVC: UIViewController, UICollectionViewDelegateFlowLayout{
                 if let indexPath = collectionView.indexPath(for: cell) {
                     let cellPosition = collectionView.convert(cell.frame, to: view).origin.y
 
-                    // Проверяем, ниже ли ячейка порога
+
                     if cellPosition < disappearThreshold {
                         let distance = disappearThreshold - cellPosition
                         let alpha = max(0, 1 - (distance / 100))
@@ -179,15 +182,15 @@ class PlacesVC: UIViewController, UICollectionViewDelegateFlowLayout{
             }
         }
 }
-extension PlacesVC: UICollectionViewDataSource {
+//MARK: - DataSource
+extension PlacesVC: UICollectionViewDataSource, UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return mount.count
+        return filteredItems.count
     }
-    
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "PlacesCell", for: indexPath) as! PlacesCell
-        let mountains = mount[indexPath.row]
-        cell.configure(with: mountains)
+        let mountain = filteredItems[indexPath.row]
+        cell.configure(with: mountain)
         return cell
     }
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
@@ -199,3 +202,14 @@ extension PlacesVC: UICollectionViewDataSource {
         self.navigationController?.pushViewController(infoPlaceVC, animated: true)
     }
 }
+extension PlacesVC: UISearchBarDelegate {
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if searchText.isEmpty {
+            filteredItems = mount
+        } else {
+            filteredItems = mount.filter { $0.name.lowercased().contains(searchText.lowercased()) }
+        }
+        collectionView.reloadData()
+    }
+}
+
